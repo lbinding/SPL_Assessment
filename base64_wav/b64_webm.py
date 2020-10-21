@@ -4,7 +4,7 @@ import base64
 import argparse
 import os
 
-def webm_file(b64_file, output):
+def b64_webm(b64_file, output):
     with open(b64_file, 'r') as file:
         data = file.read()
     decodedData = base64.b64decode(data)
@@ -21,4 +21,4 @@ parser.add_argument('--out', dest='output', help='Base 64 file', required=True)
 args = parser.parse_args()
 
 # call function to do correction
-webm_file(os.path.abspath(args.b64_file),os.path.abspath(args.output))
+b64_webm(os.path.abspath(args.b64_file),os.path.abspath(args.output))
