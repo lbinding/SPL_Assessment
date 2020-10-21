@@ -6,12 +6,21 @@
 
 
 
-b64_webm=/Users/lawrencebinding/Desktop/scripts/language_assessment/webm_file.py
+b64_webm=$(pwd)/b64_webm.py
+
+subject_dir=$1
+current_dir=$(pwd)
+
+cd ${subject_dir}
+mkdir b64
 
 for n in *; do
-    mkdir b64
-    ${b64_webm} --b64 ${n} --out ${n}_webm
-    ffmpeg -i ${n}_webm.webm -ab 160k -ar 44100 -vn ${n}.wav
-    rm -r ${n}_webm.webm
-    mv ${n} b64/${n}.txt
+  num=$(echo $n | sed 's/[^0-9]*//g')
+  ${b64_webm} --in ${n} --out ${num}_webm
+  ffmpeg -i ${num}_webm.webm -ab 160k -ar 44100 -vn ${num}.wav
+  rm -r ${num}_webm.webm
+  mv ${n} b64/${n}
+  unset -v num
 done
+
+cd ${current_dir}
