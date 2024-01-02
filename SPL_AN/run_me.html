@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+  <head>
+        <title>SPL Assessment</title>
+        <script src="jspsych/jspsych.js"></script>
+        <script src="jspsych/plugins/jspsych-audio-audio-response_2.js"></script>
+        <script src="jspsych/plugins/jspsych-html-button-response.js"></script>
+        <script src="jspsych/plugins/jspsych-survey-text-multi-choice_LB.js"></script>
+        <script src="jspsych/plugins/downloadCSV.js"></script>
+        <script src="jatos.js"></script>
+        <link href="jspsych/css/jspsych.css" rel="stylesheet">
+    </head>
+    <body></body>
+
+    <script>
+      var timeline = [];
+      var training = ['audio/training1.mp3', 'audio/training2.mp3'];
+      var audio = ['audio/question1.mp3', 'audio/question2.mp3', 'audio/question3.mp3', 'audio/question4.mp3', 'audio/question5.mp3',  'audio/question6.mp3', 'audio/question7.mp3', 'audio/question8.mp3', 'audio/question9.mp3', 'audio/question10.mp3', 'audio/question11.mp3', 'audio/question12.mp3', 'audio/question13.mp3', 'audio/question14.mp3', 'audio/question15.mp3', 'audio/question16.mp3', 'audio/question17.mp3', 'audio/question18.mp3', 'audio/question19.mp3', 'audio/question20.mp3', 'audio/question21.mp3', 'audio/question22.mp3', 'audio/question23.mp3', 'audio/question24.mp3', 'audio/question25.mp3', 'audio/question26.mp3', 'audio/question27.mp3', 'audio/question28.mp3', 'audio/question29.mp3', 'audio/question30.mp3', 'audio/question31.mp3', 'audio/question32.mp3', 'audio/question33.mp3', 'audio/question34.mp3', 'audio/question35.mp3', 'audio/question36.mp3', 'audio/question37.mp3', 'audio/question38.mp3', 'audio/question39.mp3', 'audio/question40.mp3', 'audio/question41.mp3', 'audio/question42.mp3', 'audio/question43.mp3', 'audio/question44.mp3', 'audio/question45.mp3', 'audio/question46.mp3', 'audio/question47.mp3', 'audio/question48.mp3', 'audio/question49.mp3', 'audio/question50.mp3'];
+
+      var subID = null;
+      var sex_options = ["Male", "Female"];
+      var edu_options = ["EARLY CHILDHOOD EDUCATION", "PRIMARY EDUCATION","LOWER SECONDARY EDUCATION","UPPER SECONDARY EDUCATION","POST-SECONDARY NON-TERTIARY EDUCATION","SHORT-CYCLE TERTIARY EDUCATION","BACHELOR OR EQUIVALENT LEVEL","MASTER OR EQUIVALENT LEVEL","DOCTORAL OR EQUIVALENT LEVEL","NOT ELSEWHERE CLASSIFIED"];
+      var filename = 1
+
+      // Function to save the data to a CSV ~ Default value is broken so explicitly needed
+      const saveFunction = function(data) {
+        return new Promise(function(resolve) {
+          const blob = new Blob(data, { type: 'audio/webm' });                        // create URL, which is used to replay the audio file (if allow_playback is true)
+          let url = URL.createObjectURL(blob);
+          var reader = new window.FileReader();
+          reader.readAsDataURL(blob);
+          const readerPromise = new Promise(function(resolveReader) {
+            reader.onloadend = function() {
+              // Create base64 string, which is used to save the audio data in JSON/CSV format.
+              // This has to go inside of a Promise so that the base64 data is converted before the
+              // higher-level data processing Promise is resolved (since that will pass the base64
+              // data to the onRecordingFinish function).
+              var base64 = reader.result;
+              base64 = base64.split(',')[1];
+              resolveReader(base64);
+            };
+          });
+          readerPromise.then(function(base64) {
+            // After the base64 string has been created we can resolve the higher-level Promise,
+            // which pass both the base64 data and the URL to the onRecordingFinish function.
+
+            var processed_data = {url: url, str: base64};
+            resolve(processed_data);
+            jatos.uploadResultFile(base64, filename + ".txt")
+              .done(() => { document.getElementById('state').innerHTML = "uploaded" }, filename = filename + 1)
+              .fail(() => { document.getElementById('state').innerHTML = "upload failed" })
+              .always(() => {
+                  document.getElementById('btn-start-recording').disabled = false;
+                });
+
+          });
+        });
+      }
+      function save_file_to_jatos(data) {
+        return new Promise(function (resolve) {
+          const blob = new Blob(data, { type: 'audio/webm; codecs=opus' });
+          // create URL from the audio blob, which is used to replay the audio file (if allow_playback is true)
+          let url = URL.createObjectURL(blob);
+          // use the trial number as the file name
+          var filename = i.toString() + ".webm";
+          jatos.uploadResultFile(blob, filename);
+          // need to pass an object with the URL and data string to the onRecordingFinish function
+          // - url allows the audio to be replayed if playback is true
+          // - str is used to either save the audio data as base64 string or save the filename to the jsPsych trial data
+          var trial_data = { url: url, str: filename };
+          resolve(trial_data);
+  });
+}
+
+
+
+//  TIMELINE START
+//
+    var enter_trial_info = {
+        type: 'survey-text-multi-choice',
+        preamble: '<p>SPL Language Assessment</p>',
+        questions_txt: [
+            {prompt: 'Enter subID', required: true, name: 'subID', columns: 6, rows: 1},
+            {prompt: 'Enter Age in years:', required: false, name: 'age', columns: 6, rows: 1},
+            {prompt: 'Whats your first language:', required: false, name: 'firstLang', columns: 6, rows: 1},
+            {prompt: 'How long have you been in the UK:', required: false, name: 'UKLength', columns: 6, rows: 1},
+            {prompt: 'How long have you spoken English:', required: false, name: 'EngLength', columns: 6, rows: 1},
+        ],
+        questions: [
+          {prompt: "What is your biological sex:", name: 'sex', options: sex_options, required:false, columns: 6, rows: 1},
+          {prompt: "What is your highest level of education:", name: 'edu', options: edu_options, required:false, columns: 6, rows: 1}
+
+        ],
+        button_label: 'Next',
+        on_finish: function(data) {
+            subID = parseInt(JSON.parse(data.responses).subID,10);
+            age = parseInt(JSON.parse(data.responses).age,10);
+        }
+    };
+    timeline.push(enter_trial_info);
+    var audio_check_start = {
+        type: 'html-button-response',
+        stimulus: '<p>This task involves naming objects as fast as possible<br>When you know what an image is verbally name the object.<br> Once you are ready to move onto the next picture, hit the SPACE key</p>'+
+        '<p>After you press the "Start test trial" button, a test trial will begin</p>'+
+        '<p>After you finish the test trial an audio player will appear and you can playback your recording. </p>'+
+        '<p>You can re-record as many times as necessary to ensure that,<br>during the test, the audio will be captured clearly.</p>'+
+        '<p>Please ask the experimenter if you have any questions before proceeding.</p>',
+        choices: ['Start test trial']
+    };
+    timeline.push(audio_check_start);
+
+    for (var n = 0; n<training.length; n++) {
+      var audio_check = {
+          type: 'audio-audio-response',
+          audio_stimulus: training[n],
+          visual_stimulus: 'Answer as fast as you can after the question',
+          allow_playback: true,
+          manually_end_recording: true,
+          wait_for_mic_approval: true,
+          manually_end_recording_key: jsPsych.ALL_KEYS
+    };
+    timeline.push(audio_check);
+  }
+
+    var start = {
+        type: 'html-button-response',
+        stimulus: '<p>Press the "Start" button to start the language assessment.</p>',
+        choices: ['Start'],
+        post_trial_gap: 1000
+    };
+    timeline.push(start);
+
+      for(var i = 0; i<audio.length; i++){
+        var trials = {
+          type: 'audio-audio-response',
+          audio_stimulus: audio[i],
+          visual_stimulus: 'Answer as fast as you can after the question',
+          postprocessing: saveFunction,
+          manually_end_recording: true,
+          wait_for_mic_approval: true,
+          allow_playback: false,
+          manually_end_recording_key: jsPsych.ALL_KEYS
+        }
+        timeline.push(trials);
+      }
+
+      jatos.onLoad(function() {
+      jsPsych.init({
+        timeline: timeline,
+        on_finish: function(){
+          preload_audio: [audio]
+          var csv = jsPsych.data.get().csv();
+          jatos.submitResultData(csv, jatos.startNextComponent);
+
+          var filename = subID
+          downloadCSV(csv, filename);
+          saveData(subID, jsPsych.data.dataAsCSV())
+          //jsPsych.data.displayData();
+        }
+      })
+    });
+    </script>
+</html>
